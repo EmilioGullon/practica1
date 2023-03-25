@@ -2,12 +2,19 @@
 #define COMPORTAMIENTOJUGADOR_H
 
 #include "comportamientos/comportamiento.hpp"
+#include <map>
 using namespace std;
 
 struct state{
   int fil;
   int col;
   Orientacion brujula;
+};
+
+struct CasillaVision{
+  int dist, pos; 
+  bool obstaculo;
+  char tipo;
 };
 
 
@@ -47,11 +54,14 @@ class ComportamientoJugador : public Comportamiento{
 
   state current_state;
   Action last_action;
-	bool girar_derecha,
+	bool girar_derecha,con_zapatillas,con_bikini,
   bien_situado;
-
-
 };
+
+CasillaVision BuscarCasillaObjetivo(const vector<unsigned char> &terreno, const state &st);
+
+void BuscarMovimientos();
+
 
 void PonerTerrenoEnMatriz(const vector<unsigned char> &terreno, const state &st, vector< vector<unsigned char> > &matriz);
 

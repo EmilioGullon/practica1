@@ -1,6 +1,8 @@
 #include "../Comportamientos_Jugador/jugador.hpp"
 #include <iostream>
 #include <cmath> 
+#include <map>
+
 using namespace std;
 
 
@@ -74,7 +76,9 @@ Action ComportamientoJugador::think(Sensores sensores){
 	break;
 	}
 
-
+	//
+	//Metodo siguiente acción 
+	//
 	if (sensores.terreno[0]=='G' and !bien_situado){
 		current_state.fil = sensores.posF;
 		current_state.col= sensores.posC;
@@ -108,7 +112,29 @@ int ComportamientoJugador::interact(Action accion, int valor){
 
 
 
+CasillaVision BuscarCasillaObjetivo(const vector<unsigned char> &terreno, const state &st){
+	map<int,CasillaVision> p;
+	for (int i = 0; i < 16; i++){
+		int dist = sqrt(i);
+		int numero = dist*(dist+1);
+		if(i!=numero){
+			numero=i-(dist+1)*(dist+1);		
+		}
 
+
+
+		if('G'==terreno[i]){
+			CasillaVision c;
+			c.dist=dist;
+			c.
+		}
+		
+	}
+	
+
+
+	return ;
+}
 
 
 
