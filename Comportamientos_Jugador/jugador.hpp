@@ -13,7 +13,6 @@ struct state{
 
 struct CasillaVision{
   int dist, pos; 
-  bool obstaculo;
   char tipo;
 };
 
@@ -27,15 +26,18 @@ class ComportamientoJugador : public Comportamiento{
       last_action = actIDLE;
       current_state.brujula = norte;
       girar_derecha=false;
-      bien_situado=false;
+      bien_situado= false,
+      con_zapatillas=false,
+      con_bikini=false;
     }
 
     ComportamientoJugador(const ComportamientoJugador & comport) : Comportamiento(comport){}
+
     ~ComportamientoJugador(){}
 
     Action think(Sensores sensores);
     int interact(Action accion, int valor);
-    
+    pair<map<int,CasillaVision>,vector<CasillaVision>> BuscarCasillaObjetivo(Sensores s, const state &st);
 
   private:
   /*
@@ -54,13 +56,13 @@ class ComportamientoJugador : public Comportamiento{
 
   state current_state;
   Action last_action;
+  queue<Action> Cola_acciones;
 	bool girar_derecha,con_zapatillas,con_bikini,
   bien_situado;
+  
+  
 };
 
-CasillaVision BuscarCasillaObjetivo(const vector<unsigned char> &terreno, const state &st);
-
-void BuscarMovimientos();
 
 
 void PonerTerrenoEnMatriz(const vector<unsigned char> &terreno, const state &st, vector< vector<unsigned char> > &matriz);

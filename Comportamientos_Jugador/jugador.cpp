@@ -2,6 +2,9 @@
 #include <iostream>
 #include <cmath> 
 #include <map>
+#include <vector>
+#include <utility>
+#include <queue>
 
 using namespace std;
 
@@ -89,18 +92,28 @@ Action ComportamientoJugador::think(Sensores sensores){
 	if (bien_situado){
 		PonerTerrenoEnMatriz(sensores.terreno,current_state,mapaResultado);
 	}
-
+	/*
 	if ((sensores.terreno[2]=='T' or sensores.terreno[2]=='S' or sensores.terreno[2]=='G')  and  sensores.superficie[2]=='_'){
 	accion = actFORWARD;
 	} else if (!girar_derecha){
 	accion = actTURN_SL;
-	girar_derecha = (rand()%2 ==0);
+	girar_derecha = (rand()%2 == 0);
 	} else{
 	accion = actTURN_SR;
-	girar_derecha = (rand()%2 ==0);
+	girar_derecha = (rand()%2 == 0);
 	}
-
+	*/
 	//todo
+	//Terminar cola de acciones 
+	if(!Cola_acciones.empty()){
+		accion=Cola_acciones.front();
+		Cola_acciones.pop();
+	}
+	//Si se ha terminado hacer una nueva
+	else
+		Cola_acciones=BuscarMovimientos(BuscarCasillaObjetivo(sensores,current_state));
+
+
 	last_action = accion;
 
 	return accion;
@@ -112,31 +125,267 @@ int ComportamientoJugador::interact(Action accion, int valor){
 
 
 
-CasillaVision BuscarCasillaObjetivo(const vector<unsigned char> &terreno, const state &st){
+pair<map<int,CasillaVision>,vector<CasillaVision>> ComportamientoJugador::BuscarCasillaObjetivo(Sensores s, const state &st){
 	map<int,CasillaVision> p;
-	for (int i = 0; i < 16; i++){
+	vector<CasillaVision> muros;
+	for (int i = 1; i < 16; i++){
 		int dist = sqrt(i);
-		int numero = dist*(dist+1);
-		if(i!=numero){
-			numero=i-(dist+1)*(dist+1);		
-		}
-
-
-
-		if('G'==terreno[i]){
-			CasillaVision c;
-			c.dist=dist;
-			c.pos=i-(c.dist+1)*c.dist;
-		}
-		
+		CasillaVision c;
+		c.dist=dist;
+		c.pos=i-(c.dist+1)*c.dist;		//La mitad
+		c.tipo=s.terreno[i];
+		switch (c.tipo)
+		{
+		case 'G':
+			if(!this->bien_situado)
+				p[1]=c;
+			break;
+		case 'X':
+			if(s.bateria<2500)
+				p[2]=c;
+			break;
+		case 'K':
+			if(!this->con_bikini)
+				p[3]=c;
+			break;
+		case 'D':
+			if(!this->con_zapatillas)
+				p[4]=c;	
+			break;
+		case 'S':
+			p[5]=c;
+			break;
+		case 'T':
+			p[6]=c;
+			break;
+		case 'B':
+			if(this->con_zapatillas)
+				p[6]=c;	
+			else
+				p[7]=c;
+			break;
+		case 'A':
+			/* si tiene el bikini bien  */
+			if(this->con_bikini)
+				p[6]=c;
+			else
+				p[8]=c;
+			break;
+		case 'M':
+			//Guardar como muro
+			muros.push_back(c);
+			break;
+		case 'P':
+			//guardar como muro
+			muros.push_back(c);
+			break;																	
+		default:
+			break;
+		}		
 	}
-	
-
-
-	return ;
+	return make_pair(p,muros);
 }
 
+queue<Action> BuscarMovimientos(pair<map<int,CasillaVision>,vector<CasillaVision>> p){
+	//SI HAY 1 MUROS EN EL CENTRO DEL NIVEL 1 --> GIRAR A LA DERECHA 
+	//SI HAY HAY TRES MUROS EN LOS 3 DEL CENTRO EN EL NIVEL DOS --> SI EL OBJETIVO ESTA EN EL NIVEL 1 IR HACIA EL
+	//															--> SI NO GIRAR A LA DERECHA
+	int lvl[3]={0,0,0};
+	bool lvl3=false;
+	int dist;
+	int pos;
+	queue<Action> devolver;
+	for (int i = 0; i < p.second.size(); i++)
+		lvl[p.second[i].dist]++;
+	
+	if(lvl[1]==3)
+		devolver=GirarDetras(); //Girar pa tras
+	else{
+		if(lvl[2]==5)
+			lvl3=true;	
+		bool enc=false;
+		for (auto it = p.first.begin(); it != p.first.end()&&!enc; it++)
+		{
+			//Si es del lvl3 y el lvl3 esta activado no se mete.
+			if (it->second.pos == 3 && !lvl3) {
+				pos = it->second.pos;
+				dist = it->second.dist;
+				enc = true;
+			}
+			else if (it->second.pos != 3) {
+				pos = it->second.pos;
+				dist = it->second.dist;
+				enc = true;
+			}
+		}
+		// SE DECIDE UN CASO CON EL NVL(DIST) Y POS 	
+		// SEGUN LA POSICION SI ES -3,-2 ES CASO IZQ
+		// SI ES DE -1 A 1 ES CASO CENTRO 
+		// EL RESTO CASO DRCH
+		cout<<"Se encontro casilla"<<endl;
+		cout<<" | "<<dist<<" | "<<pos<<" | "<<endl;
+		if(pos<-1)
+			devolver=CasoIzq(pos,dist,p.second,false);
+		else if(pos<2)
+				devolver=CasoCentro(pos,dist,p.second,false);
+			else
+				devolver=CasoDrch(pos,dist,p.second,false);
+	}
+	return devolver;
+}
 
+queue<Action> GirarDetras(){
+	queue<Action> devolver;
+	switch (rand()%2)
+	{
+	case 0:
+		devolver.push(actTURN_BL);
+		break;
+	case 1:
+		devolver.push(actTURN_BR);		
+		break;	
+	default:
+		break;
+	}
+	cout<<"SE DIO LA VUELTA"<<endl;
+	return devolver;
+}
+
+//SI HAY ALGUN BLOQUE DE MURO HASTA LLEGAR AL NIVEL 
+//		--> SI NO HAY SE COMPRUEBA QUE SE PUEDE GIRAR A LA IZQ O DRCH DEPENDIENDO DE LA POS 
+//		--> SI NO SE PUEDE CUALQUIERA DE LAS DOS CONDICIONES SE VA AL CASO IZQ EN CASO DE POS SEA - O DRCH EN EL CASO +
+//SI SE VIENE DE UN CASO YA FALLADO EN VEZ DE GIRAR A OTRO CASO SE GIRA DETRAS
+queue<Action> CasoCentro(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta){
+	bool enc=false;
+	queue<Action> devolver;
+	for (int i = 0; i < p.size()&&!enc; i++)
+		if(p[i].pos==0&&p[i].dist<=Nvl)
+			enc=true;
+	//Si pudo llegar al nvl en una linea recta
+	if(!enc)
+		if(pos!=0)
+			if(pos<0)
+				for (int i = 0; i < p.size()&&!enc; i++)
+					if(p[i].pos>=pos&&p[i].dist==Nvl)
+						enc=true;
+			else
+				for (int i = 0; i < p.size()&&!enc; i++)
+					if(p[i].pos<=pos&&p[i].dist==Nvl)
+						enc=true;
+	
+	//Si pudo llegar a la casilla objetivo si no intentamos con caso izq o drch, o giro hacia detras
+	if(enc){
+		if(darVuelta)
+			devolver=GirarDetras();
+		else
+			if(pos<0)
+				devolver=CasoIzq(pos,Nvl,p,true);
+			else
+				devolver=CasoDrch(pos,Nvl,p,true);
+	}
+	else{
+		// BUCLE QUE AÑADA INSTRUCCIONES DE SEGUIR RECTO HASTA LLEGAR AL NLV 	
+		// SI NO ES CERO GIRAR 90º DOS INST DE GIRAR Y AVANZAR HASTA LA CASILLA DE POS
+		// SI ES CERO HA LLEGADO
+		for (int i = 0; i < Nvl; i++)
+		{
+			devolver.push(actFORWARD);
+		}
+		if(pos<0){
+			devolver.push(actTURN_SL);
+			devolver.push(actTURN_SL);
+		}
+		else if(pos>0){
+			devolver.push(actTURN_SR);
+			devolver.push(actTURN_SR);			
+		}
+		for (int i = 0; i < abs(pos); i++) //abs devuelve el valor absoluto
+		{
+			devolver.push(actFORWARD);
+		}	
+	}
+	return devolver;
+}
+
+queue<Action> CasoIzq(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta){
+	bool enc=false;
+	queue<Action> devolver;
+	for (int i = 0; i < p.size()&&!enc; i++)
+		if(p[i].pos==-p[i].dist&&p[i].dist<=Nvl)
+			enc=true;
+	//Si pudo llegar al nvl en una linea recta
+	if(!enc)
+		if(pos!=-Nvl)
+			for (int i = 0; i < p.size()&&!enc; i++)
+				if(p[i].pos<=pos&&p[i].dist==Nvl)
+					enc=true;
+	//Si pudo llegar a la casilla objetivo si no intentamos con caso izq o drch, o giro hacia detras
+	if(enc){
+		if(darVuelta)
+			devolver=GirarDetras();
+		else
+			devolver=CasoCentro(pos,Nvl,p,true);
+	}
+	else{
+		// En esta ocasión primero gira.
+		devolver.push(actTURN_SL);
+		// BUCLE QUE AÑADA INSTRUCCIONES DE SEGUIR RECTO HASTA LLEGAR AL NLV 	
+		// SI NO ES CERO GIRAR 90º DOS INST DE GIRAR Y AVANZAR HASTA LA CASILLA DE POS
+		// SI ES CERO HA LLEGADO
+		for (int i = 0; i < Nvl; i++)
+		{
+			devolver.push(actFORWARD);
+		}
+		if(pos=!-Nvl){
+			devolver.push(actTURN_BR);
+		}
+		for (int i = 0; i < abs(pos); i++) //abs devuelve el valor absoluto
+		{
+			devolver.push(actFORWARD);
+		}	
+	}
+	return devolver;
+}
+
+queue<Action> CasoDrch(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta){
+	bool enc=false;
+	queue<Action> devolver;
+	for (int i = 0; i < p.size()&&!enc; i++)
+		if(p[i].pos==p[i].dist&&p[i].dist<=Nvl)
+			enc=true;
+	//Si pudo llegar al nvl en una linea recta
+	if(!enc)
+		if(pos!=Nvl)
+			for (int i = 0; i < p.size()&&!enc; i++)
+				if(p[i].pos>=pos&&p[i].dist==Nvl)
+					enc=true;
+	//Si pudo llegar a la casilla objetivo si no intentamos con caso izq o drch, o giro hacia detras
+	if(enc){
+		if(darVuelta)
+			devolver=GirarDetras();
+		else
+			devolver=CasoCentro(pos,Nvl,p,true);
+	}
+	else{
+		// En esta ocasión primero gira.
+		devolver.push(actTURN_SR);
+		// BUCLE QUE AÑADA INSTRUCCIONES DE SEGUIR RECTO HASTA LLEGAR AL NLV 	
+		// SI NO ES CERO GIRAR 90º DOS INST DE GIRAR Y AVANZAR HASTA LA CASILLA DE POS
+		// SI ES CERO HA LLEGADO
+		for (int i = 0; i < Nvl; i++)
+		{
+			devolver.push(actFORWARD);
+		}
+		if(pos=!Nvl){
+			devolver.push(actTURN_BL);
+		}
+		for (int i = 0; i < abs(pos); i++) //abs devuelve el valor absoluto
+		{
+			devolver.push(actFORWARD);
+		}	
+	}
+	return devolver;
+}
 
 
 void PonerTerrenoEnMatriz(const vector<unsigned char> &terreno, const state &st, vector< vector<unsigned char> > &matriz){
