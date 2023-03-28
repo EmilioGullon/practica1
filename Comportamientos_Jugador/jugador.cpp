@@ -126,7 +126,7 @@ CasillaVision BuscarCasillaObjetivo(const vector<unsigned char> &terreno, const 
 		if('G'==terreno[i]){
 			CasillaVision c;
 			c.dist=dist;
-			c.
+			c.pos=i-(c.dist+1)*c.dist;
 		}
 		
 	}
