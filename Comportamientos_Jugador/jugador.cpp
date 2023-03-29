@@ -13,6 +13,7 @@ using namespace std;
 
 Action ComportamientoJugador::think(Sensores sensores){
 
+
 	Action accion=actIDLE;
 
 	cout << "Posicion: fila " << sensores.posF << " columna " << sensores.posC << " ";
@@ -80,6 +81,10 @@ Action ComportamientoJugador::think(Sensores sensores){
 	break;
 	}
 
+	if(sensores.terreno[0]=='X' and sensores.bateria<1500){
+		last_action=actIDLE;
+		return actIDLE;
+	}
 	//
 	//Metodo siguiente acción 
 	//
@@ -89,7 +94,37 @@ Action ComportamientoJugador::think(Sensores sensores){
 		current_state.brujula = sensores.sentido;
 		bien_situado = true;
 	}
+	if(sensores.terreno[0]=='K' and !con_bikini)
+		con_bikini=true;
+	
+	if(sensores.terreno[0]=='D' and !con_zapatillas)
+		con_zapatillas=true;
+	
 
+	if(pintar_bordes){
+			// set top and bottom rows to zero
+		int N = mapaResultado.size();
+		int M = mapaResultado[0].size();
+		for (int j = 0; j < N; j++) {
+			mapaResultado[0][j] = 'P'; // set to zero
+			mapaResultado[1][j] = 'P'; // set to zero
+			mapaResultado[2][j] = 'P'; // set to zero
+			mapaResultado[M-3][j] = 'P'; // set to zero
+			mapaResultado[M-2][j] = 'P'; // set to zero
+			mapaResultado[M-1][j] = 'P'; // set to zero
+		}
+		// set left and right columns to zero
+		
+		for (int i = 3; i < M-3; i++) {
+			mapaResultado[i][0] = 'P'; // set to zero
+			mapaResultado[i][1] = 'P'; // set to zero
+			mapaResultado[i][2] = 'P'; // set to zero
+			mapaResultado[i][N-3] = 'P'; // set to zero
+			mapaResultado[i][N-2] = 'P'; // set to zero
+			mapaResultado[i][N-1] = 'P'; // set to zero
+   		}
+		pintar_bordes=false;
+	}	
 	if (bien_situado){
 		PonerTerrenoEnMatriz(sensores.terreno,current_state,mapaResultado);
 	}
@@ -106,9 +141,36 @@ Action ComportamientoJugador::think(Sensores sensores){
 	*/
 	//todo
 	//Terminar cola de acciones 
+
+	bool CasillaEspecial = false;
+	bool SeguirRecto = false;
+	if((sensores.terreno[2]=='T' or sensores.terreno[2]=='S' or sensores.terreno[2]=='G' or sensores.terreno[2]=='B' or sensores.terreno[2]=='X' or sensores.terreno[2]=='D' or sensores.terreno[2]=='K' )  and  sensores.superficie[2]=='_')
+		SeguirRecto = true;
+	else if(sensores.terreno[2]=='A' and con_bikini)
+		SeguirRecto = true;
+
 	if(Cola_acciones.empty()){
-		cout<<"Buscado movimiento"<<endl;
-		Cola_acciones=BuscarMovimientos(BuscarCasillaObjetivo(sensores,current_state));
+		cout<<"Buscando casillas..."<<endl;
+		pair<map<int,CasillaVision>,vector<CasillaVision>> movimientos = BuscarCasillaObjetivo(sensores,current_state,CasillaEspecial);
+		if(CasillaEspecial){
+			Cola_acciones = BuscarMovimientos(movimientos);
+			girar_estrella = false;	
+		}
+		else{
+			cout<<"No hay casillas especiales"<<endl;
+
+			if(SeguirRecto)
+				if(!girar_estrella){
+					Cola_acciones.push(actTURN_BL);	
+					girar_estrella=true;
+				}
+				else{
+					Cola_acciones.push(actFORWARD);
+				}
+
+			else
+				Cola_acciones.push(actTURN_BR);			
+		}
 	}
 	//Si se ha terminado hacer una nueva	
 	
@@ -126,7 +188,7 @@ int ComportamientoJugador::interact(Action accion, int valor){
 
 
 
-pair<map<int,CasillaVision>,vector<CasillaVision>> ComportamientoJugador::BuscarCasillaObjetivo(Sensores s, const state &st){
+pair<map<int,CasillaVision>,vector<CasillaVision>> ComportamientoJugador::BuscarCasillaObjetivo(Sensores s, const state &st,bool &CasillaEspecial){
 	map<int,CasillaVision> p;
 	vector<CasillaVision> muros;
 	for (int i = 1; i < 16; i++){
@@ -135,51 +197,82 @@ pair<map<int,CasillaVision>,vector<CasillaVision>> ComportamientoJugador::Buscar
 		c.dist=dist;
 		c.pos=i-(c.dist+1)*c.dist;		//La mitad
 		c.tipo=s.terreno[i];
+		cout<<"Casilla que se analiza es: "<<c.tipo<<" "<<i<<" tipo = "<<" dist = "<<c.dist<<" pos = "<<c.pos<<endl;
 		switch (c.tipo)
 		{
-		case 'G':
+		// POSICION G
+		case 'G': 
 			if(!this->bien_situado){
 				p[1]=c;
 				cout<<"Tipo G: "<<i<<" -> "<<c.dist<<" "<<c.pos<<endl;
+				CasillaEspecial=true;
 			}
 			break;
+		// RECARGA X
 		case 'X':
-			if(s.bateria<2500)
+			if(s.bateria<1150){
 				p[2]=c;
+				CasillaEspecial=true;				
+			}
 			break;
+		//  BIKINI
 		case 'K':
-			if(!this->con_bikini)
+			if(!this->con_bikini){
 				p[3]=c;
+				CasillaEspecial=true;			
+			}
 			break;
+		//  ZAPATILLAS
 		case 'D':
-			if(!this->con_zapatillas)
-				p[4]=c;	
+			if(!this->con_zapatillas){				
+				CasillaEspecial=true;
+				p[4]=c;
+				}	
 			break;
+		// SUELO
 		case 'S':
+			if(p.find(5)==p.end())
+				p[5]=c;
+			if (c.dist==2&&c.pos==3)
+			{
+				/* code */
+			}
+			
+			break;
+		// TIERRA
+		case 'T':
+			if(p.find(5)==p.end())
 			p[5]=c;
 			break;
-		case 'T':
-			p[6]=c;
-			break;
+		// BOSQUE
 		case 'B':
 			if(this->con_zapatillas)
-				p[6]=c;	
+				if(p.find(6)==p.end())	
+					p[6]=c;				
 			else
-				p[7]=c;
+				if(p.find(7)==p.end())
+					p[7]=c;
 			break;
 		case 'A':
+		// AGUA
 			/* si tiene el bikini bien  */
 			if(this->con_bikini)
-				p[6]=c;
+				if(p.find(6)==p.end())
+					p[6]=c;
 			else
-				p[8]=c;
+				if(p.find(8)==p.end())
+					p[8]=c;
 			break;
+		// MURO
 		case 'M':
 			//Guardar como muro
+			cout<<"Entra el muro "<<endl;
 			muros.push_back(c);
 			break;
+		// PRECIPICIO
 		case 'P':
 			//guardar como muro
+			cout<<"Entra el muro "<<endl;			
 			muros.push_back(c);
 			break;																	
 		default:
@@ -193,13 +286,14 @@ queue<Action> BuscarMovimientos(pair<map<int,CasillaVision>,vector<CasillaVision
 	//SI HAY 1 MUROS EN EL CENTRO DEL NIVEL 1 --> GIRAR A LA DERECHA 
 	//SI HAY HAY TRES MUROS EN LOS 3 DEL CENTRO EN EL NIVEL DOS --> SI EL OBJETIVO ESTA EN EL NIVEL 1 IR HACIA EL
 	//															--> SI NO GIRAR A LA DERECHA
-	int lvl[3]={0,0,0};
+	cout<<"Tamaño del vector muros "<<p.second.size()<<endl;
+	int lvl[4]={0,0,0,0};    //Hay 4 el primero siempre estara vacio me ahorro cambiar el código 
 	bool lvl3=false;
 	int dist;
 	queue<Action> pp;
 	int pos;
 	for (int i = 0; i < p.second.size(); i++)
-		lvl[p.second[i].dist]++;
+		lvl[p.second[i].dist]++;     			
 	
 	if(lvl[1]==3)
 		pp = GirarDetras(); //Girar pa tras
@@ -236,7 +330,7 @@ queue<Action> BuscarMovimientos(pair<map<int,CasillaVision>,vector<CasillaVision
 				pp = CasoDrch(pos,dist,p.second,false);
 	}
 	cout<<endl;
-	cout<<pp.front()<<endl;
+	cout<<pp.front()<<"Tamaño de :  "<<pp.size()<<endl;
 
 	return pp;
 }
@@ -354,11 +448,19 @@ queue<Action> CasoIzq(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta){
 			cout<<"Metemos un FORWARD"<<"--";			
 			devolver.push(actFORWARD);
 		}
-		if(pos=!-Nvl){
+		if(pos != -Nvl){
 			cout<<"Metemos un TURN_BR"<<"--";			
 			devolver.push(actTURN_BR);
 		}
-		for (int i = 0; i < abs(pos); i++) //abs devuelve el valor absoluto
+		if (pos<0)
+		{
+			pos=-pos;
+		}
+
+		pos=3-pos;
+		
+
+		for (int i = 0; i < pos; i++) //abs devuelve el valor absoluto
 		{
 			cout<<"Metemos un FORWARD"<<"--";			
 			devolver.push(actFORWARD);
@@ -399,11 +501,14 @@ queue<Action> CasoDrch(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta){
 			cout<<"Metemos un FORWARD"<<"--";
 			devolver.push(actFORWARD);
 		}
-		if(pos=!Nvl){
+		if(pos!=Nvl){
 			cout<<"Metemos un TURN_BL"<<"--";			
 			devolver.push(actTURN_BL);
 		}
-		for (int i = 0; i < abs(pos); i++) //abs devuelve el valor absoluto
+
+		pos=3-pos;
+
+		for (int i = 0; i < pos; i++) //abs devuelve el valor absoluto
 		{
 			cout<<"Metemos un FORWARD"<<"--";			
 			devolver.push(actFORWARD);

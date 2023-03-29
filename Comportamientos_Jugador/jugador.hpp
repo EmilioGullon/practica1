@@ -26,10 +26,11 @@ class ComportamientoJugador : public Comportamiento{
       current_state.fil=current_state.col=99;
       last_action = actIDLE;
       current_state.brujula = norte;
-      girar_derecha=false;
+      pintar_bordes=true;
       bien_situado= false,
       con_zapatillas=false,
       con_bikini=false;
+      girar_estrella=false;
     }
 
     ComportamientoJugador(const ComportamientoJugador & comport) : Comportamiento(comport){}
@@ -38,7 +39,7 @@ class ComportamientoJugador : public Comportamiento{
 
     Action think(Sensores sensores);
     int interact(Action accion, int valor);
-    pair<map<int,CasillaVision>,vector<CasillaVision>> BuscarCasillaObjetivo(Sensores s, const state &st);
+    pair<map<int,CasillaVision>,vector<CasillaVision>> BuscarCasillaObjetivo(Sensores s, const state &st,bool &CasillaEspecial);
 
   private:
   /*
@@ -58,7 +59,7 @@ class ComportamientoJugador : public Comportamiento{
   state current_state;
   Action last_action;
   queue<Action> Cola_acciones;
-	bool girar_derecha,con_zapatillas,con_bikini,
+	bool pintar_bordes,con_zapatillas,con_bikini,girar_estrella,
   bien_situado;
   
   
