@@ -236,6 +236,7 @@ queue<Action> BuscarMovimientos(pair<map<int,CasillaVision>,vector<CasillaVision
 	}
 	cout<<endl;
 	cout<<pp.front()<<endl;
+
 	return pp;
 }
 
