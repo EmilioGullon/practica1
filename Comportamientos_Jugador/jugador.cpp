@@ -10,6 +10,7 @@ using namespace std;
 
 
 
+
 Action ComportamientoJugador::think(Sensores sensores){
 
 	Action accion=actIDLE;
