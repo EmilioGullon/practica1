@@ -3,6 +3,7 @@
 
 #include "comportamientos/comportamiento.hpp"
 #include <map>
+#include <queue>
 using namespace std;
 
 struct state{
@@ -64,6 +65,11 @@ class ComportamientoJugador : public Comportamiento{
 };
 
 
+queue<Action> BuscarMovimientos(pair<map<int,CasillaVision>,vector<CasillaVision>> p);
+queue<Action> GirarDetras();
+queue<Action> CasoCentro(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta);
+queue<Action> CasoIzq(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta);
+queue<Action> CasoDrch(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta);
 
 void PonerTerrenoEnMatriz(const vector<unsigned char> &terreno, const state &st, vector< vector<unsigned char> > &matriz);
 

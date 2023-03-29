@@ -12,7 +12,7 @@ using namespace std;
 
 Action ComportamientoJugador::think(Sensores sensores){
 
-	Action accion=actFORWARD;
+	Action accion=actIDLE;
 
 	cout << "Posicion: fila " << sensores.posF << " columna " << sensores.posC << " ";
 	switch(sensores.sentido){
@@ -105,15 +105,15 @@ Action ComportamientoJugador::think(Sensores sensores){
 	*/
 	//todo
 	//Terminar cola de acciones 
-	if(!Cola_acciones.empty()){
-		accion=Cola_acciones.front();
-		Cola_acciones.pop();
-	}
-	//Si se ha terminado hacer una nueva
-	else
+	if(Cola_acciones.empty()){
+		cout<<"Buscado movimiento"<<endl;
 		Cola_acciones=BuscarMovimientos(BuscarCasillaObjetivo(sensores,current_state));
-
-
+	}
+	//Si se ha terminado hacer una nueva	
+	
+	cout<<"Accion a realizar: "<<accion<<" Acciones que quedan : "<<Cola_acciones.size()<<endl;
+	accion=Cola_acciones.front();
+	Cola_acciones.pop();
 	last_action = accion;
 
 	return accion;
@@ -137,8 +137,10 @@ pair<map<int,CasillaVision>,vector<CasillaVision>> ComportamientoJugador::Buscar
 		switch (c.tipo)
 		{
 		case 'G':
-			if(!this->bien_situado)
+			if(!this->bien_situado){
 				p[1]=c;
+				cout<<"Tipo G: "<<i<<" -> "<<c.dist<<" "<<c.pos<<endl;
+			}
 			break;
 		case 'X':
 			if(s.bateria<2500)
@@ -193,13 +195,13 @@ queue<Action> BuscarMovimientos(pair<map<int,CasillaVision>,vector<CasillaVision
 	int lvl[3]={0,0,0};
 	bool lvl3=false;
 	int dist;
+	queue<Action> pp;
 	int pos;
-	queue<Action> devolver;
 	for (int i = 0; i < p.second.size(); i++)
 		lvl[p.second[i].dist]++;
 	
 	if(lvl[1]==3)
-		devolver=GirarDetras(); //Girar pa tras
+		pp = GirarDetras(); //Girar pa tras
 	else{
 		if(lvl[2]==5)
 			lvl3=true;	
@@ -207,6 +209,7 @@ queue<Action> BuscarMovimientos(pair<map<int,CasillaVision>,vector<CasillaVision
 		for (auto it = p.first.begin(); it != p.first.end()&&!enc; it++)
 		{
 			//Si es del lvl3 y el lvl3 esta activado no se mete.
+			cout<<it->first<<" es "<<"  "<<it->second.dist<<"  "<<it->second.pos<<"  "<<endl; 
 			if (it->second.pos == 3 && !lvl3) {
 				pos = it->second.pos;
 				dist = it->second.dist;
@@ -225,13 +228,15 @@ queue<Action> BuscarMovimientos(pair<map<int,CasillaVision>,vector<CasillaVision
 		cout<<"Se encontro casilla"<<endl;
 		cout<<" | "<<dist<<" | "<<pos<<" | "<<endl;
 		if(pos<-1)
-			devolver=CasoIzq(pos,dist,p.second,false);
+			pp = CasoIzq(pos,dist,p.second,false);
 		else if(pos<2)
-				devolver=CasoCentro(pos,dist,p.second,false);
+				pp = CasoCentro(pos,dist,p.second,false);
 			else
-				devolver=CasoDrch(pos,dist,p.second,false);
+				pp = CasoDrch(pos,dist,p.second,false);
 	}
-	return devolver;
+	cout<<endl;
+	cout<<pp.front()<<endl;
+	return pp;
 }
 
 queue<Action> GirarDetras(){
@@ -256,23 +261,28 @@ queue<Action> GirarDetras(){
 //		--> SI NO SE PUEDE CUALQUIERA DE LAS DOS CONDICIONES SE VA AL CASO IZQ EN CASO DE POS SEA - O DRCH EN EL CASO +
 //SI SE VIENE DE UN CASO YA FALLADO EN VEZ DE GIRAR A OTRO CASO SE GIRA DETRAS
 queue<Action> CasoCentro(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta){
+	cout<<"Se busca por el CENTRO"<<endl;
 	bool enc=false;
 	queue<Action> devolver;
-	for (int i = 0; i < p.size()&&!enc; i++)
-		if(p[i].pos==0&&p[i].dist<=Nvl)
+		for (int i = 0; i < p.size()&&!enc; i++){
+		if(p[i].pos==0&&p[i].dist<=Nvl){
 			enc=true;
+			}
+		}
 	//Si pudo llegar al nvl en una linea recta
 	if(!enc)
-		if(pos!=0)
-			if(pos<0)
+		if(pos!=0){
+			if(pos<0){
 				for (int i = 0; i < p.size()&&!enc; i++)
 					if(p[i].pos>=pos&&p[i].dist==Nvl)
 						enc=true;
-			else
+				}
+			else{
 				for (int i = 0; i < p.size()&&!enc; i++)
 					if(p[i].pos<=pos&&p[i].dist==Nvl)
 						enc=true;
-	
+				}
+		}
 	//Si pudo llegar a la casilla objetivo si no intentamos con caso izq o drch, o giro hacia detras
 	if(enc){
 		if(darVuelta)
@@ -287,20 +297,23 @@ queue<Action> CasoCentro(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta)
 		// BUCLE QUE AÑADA INSTRUCCIONES DE SEGUIR RECTO HASTA LLEGAR AL NLV 	
 		// SI NO ES CERO GIRAR 90º DOS INST DE GIRAR Y AVANZAR HASTA LA CASILLA DE POS
 		// SI ES CERO HA LLEGADO
-		for (int i = 0; i < Nvl; i++)
-		{
+		for (int i = 0; i < Nvl; i++){
+			cout<<"Metemos un FORWARD"<<"--";			
 			devolver.push(actFORWARD);
 		}
 		if(pos<0){
+			cout<<"Metemos dos TURN_SL"<<"--";			
 			devolver.push(actTURN_SL);
 			devolver.push(actTURN_SL);
 		}
 		else if(pos>0){
+			cout<<"Metemos dos TURN_SR"<<"--";			
 			devolver.push(actTURN_SR);
 			devolver.push(actTURN_SR);			
 		}
 		for (int i = 0; i < abs(pos); i++) //abs devuelve el valor absoluto
 		{
+			cout<<"Metemos un FORWARD"<<"--";			
 			devolver.push(actFORWARD);
 		}	
 	}
@@ -308,6 +321,7 @@ queue<Action> CasoCentro(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta)
 }
 
 queue<Action> CasoIzq(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta){
+	cout<<"Se busca por el IZQ"<<endl;
 	bool enc=false;
 	queue<Action> devolver;
 	for (int i = 0; i < p.size()&&!enc; i++)
@@ -328,19 +342,23 @@ queue<Action> CasoIzq(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta){
 	}
 	else{
 		// En esta ocasión primero gira.
+		cout<<"Metemos un actTURN_SL"<<endl;
 		devolver.push(actTURN_SL);
 		// BUCLE QUE AÑADA INSTRUCCIONES DE SEGUIR RECTO HASTA LLEGAR AL NLV 	
 		// SI NO ES CERO GIRAR 90º DOS INST DE GIRAR Y AVANZAR HASTA LA CASILLA DE POS
 		// SI ES CERO HA LLEGADO
 		for (int i = 0; i < Nvl; i++)
 		{
+			cout<<"Metemos un FORWARD"<<"--";			
 			devolver.push(actFORWARD);
 		}
 		if(pos=!-Nvl){
+			cout<<"Metemos un TURN_BR"<<"--";			
 			devolver.push(actTURN_BR);
 		}
 		for (int i = 0; i < abs(pos); i++) //abs devuelve el valor absoluto
 		{
+			cout<<"Metemos un FORWARD"<<"--";			
 			devolver.push(actFORWARD);
 		}	
 	}
@@ -348,6 +366,7 @@ queue<Action> CasoIzq(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta){
 }
 
 queue<Action> CasoDrch(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta){
+	cout<<"Se busca por el DRCH"<<endl;	
 	bool enc=false;
 	queue<Action> devolver;
 	for (int i = 0; i < p.size()&&!enc; i++)
@@ -368,19 +387,23 @@ queue<Action> CasoDrch(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta){
 	}
 	else{
 		// En esta ocasión primero gira.
+		cout<<"Metemos un actTURN_SR"<<endl;		
 		devolver.push(actTURN_SR);
 		// BUCLE QUE AÑADA INSTRUCCIONES DE SEGUIR RECTO HASTA LLEGAR AL NLV 	
 		// SI NO ES CERO GIRAR 90º DOS INST DE GIRAR Y AVANZAR HASTA LA CASILLA DE POS
 		// SI ES CERO HA LLEGADO
 		for (int i = 0; i < Nvl; i++)
 		{
+			cout<<"Metemos un FORWARD"<<"--";
 			devolver.push(actFORWARD);
 		}
 		if(pos=!Nvl){
+			cout<<"Metemos un TURN_BL"<<"--";			
 			devolver.push(actTURN_BL);
 		}
 		for (int i = 0; i < abs(pos); i++) //abs devuelve el valor absoluto
 		{
+			cout<<"Metemos un FORWARD"<<"--";			
 			devolver.push(actFORWARD);
 		}	
 	}
@@ -401,7 +424,6 @@ void PonerTerrenoEnMatriz(const vector<unsigned char> &terreno, const state &st,
 		for(int i=1;i<4;i++){
 			fil1=i;
 			for (col1 = -i; col1 <= i; col1++){
-				cout<<fil1<<" and "<<col1<<" = "<< cont <<endl;
 				matriz[st.fil+fil1*fil][st.col+col1]  = terreno [cont];
 				cont++;
 			}
@@ -415,13 +437,11 @@ void PonerTerrenoEnMatriz(const vector<unsigned char> &terreno, const state &st,
 		for(int i=1;i<4;i++){
 			fil1=i;
 			for (col1 = 0; col1 < i; col1++){
-				cout<<fil1<<" and "<<col1<<" = "<< cont <<endl;
 				matriz[st.fil+fil1*fil][st.col+col1*col]  = terreno [cont];
 				cont++;
 			}
 			
 			for (fil1; fil1 >= 0; fil1--){
-				cout<<fil1<<" and "<<col1<<" = "<< cont <<endl;
 				matriz[st.fil+fil1*fil][st.col+col1*col]  = terreno [cont];
 				cont++;
 			}
@@ -434,7 +454,6 @@ void PonerTerrenoEnMatriz(const vector<unsigned char> &terreno, const state &st,
 		for(int i=1;i<4;i++){
 			col1=i;
 			for (fil1 = -i; fil1 <= i; fil1++){
-				cout<<fil1<<" and "<<col1<<" = "<< cont <<endl;
 				matriz[st.fil+fil1][st.col+col1*col]  = terreno [cont];
 				cont++;
 			}
@@ -448,13 +467,11 @@ void PonerTerrenoEnMatriz(const vector<unsigned char> &terreno, const state &st,
 		for(int i=1;i<4;i++){
 			col1=i;
 			for (fil1 = 0; fil1 < i; fil1++){
-				cout<<fil1<<" and "<<col1<<" = "<< cont <<endl;
 				matriz[st.fil+fil1*fil][st.col+col1*col]  = terreno [cont];
 				cont++;
 			}
 			
 			for (col1; col1 >= 0; col1--){
-				cout<<fil1<<" and "<<col1<<" = "<< cont <<endl;
 				matriz[st.fil+fil1*fil][st.col+col1*col]  = terreno [cont];
 				cont++;
 			}
@@ -467,7 +484,6 @@ void PonerTerrenoEnMatriz(const vector<unsigned char> &terreno, const state &st,
 		for(int i=1;i<4;i++){
 			fil1=i;
 			for (col1 = -i; col1 <= i; col1++){
-				cout<<fil1<<" and "<<col1<<" = "<< cont <<endl;
 				matriz[st.fil+fil1*fil][st.col+-col1]  = terreno [cont];
 				cont++;
 			}
@@ -481,13 +497,11 @@ void PonerTerrenoEnMatriz(const vector<unsigned char> &terreno, const state &st,
 		for(int i=1;i<4;i++){
 			fil1=i;
 			for (col1 = 0; col1 < i; col1++){
-				cout<<fil1<<" and "<<col1<<" = "<< cont <<endl;
 				matriz[st.fil+fil1*fil][st.col+col1*col]  = terreno [cont];
 				cont++;
 			}
 			
 			for (fil1; fil1 >= 0; fil1--){
-				cout<<fil1<<" and "<<col1<<" = "<< cont <<endl;
 				matriz[st.fil+fil1*fil][st.col+col1*col]  = terreno [cont];
 				cont++;
 			}
@@ -500,7 +514,6 @@ void PonerTerrenoEnMatriz(const vector<unsigned char> &terreno, const state &st,
 		for(int i=1;i<4;i++){
 			col1=i;
 			for (fil1 = -i; fil1 <= i; fil1++){
-				cout<<fil1<<" and "<<col1<<" = "<< cont <<endl;
 				matriz[st.fil+-fil1][st.col+col1*col]  = terreno [cont];
 				cont++;
 			}
@@ -514,13 +527,11 @@ void PonerTerrenoEnMatriz(const vector<unsigned char> &terreno, const state &st,
 		for(int i=1;i<4;i++){
 			col1=i;
 			for (fil1 = 0; fil1 < i; fil1++){
-				cout<<fil1<<" and "<<col1<<" = "<< cont <<endl;
 				matriz[st.fil+fil1*fil][st.col+col1*col]  = terreno [cont];
 				cont++;
 			}
 			
 			for (col1; col1 >= 0; col1--){
-				cout<<fil1<<" and "<<col1<<" = "<< cont <<endl;
 				matriz[st.fil+fil1*fil][st.col+col1*col]  = terreno [cont];
 				cont++;
 			}
