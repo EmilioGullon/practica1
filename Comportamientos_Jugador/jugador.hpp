@@ -18,6 +18,14 @@ struct CasillaVision{
 };
 
 
+struct CasillaGuardada{
+  char Cas;         //Tipo de Casilla
+  int Nvisit;       //Numero de veces pasada por encima
+  int Nsee;         //Numero de veces vista
+  int gravedad;     //Calcular la gravedad para ver si la visitamos o no. 
+};
+
+
 class ComportamientoJugador : public Comportamiento{
   public:
     ComportamientoJugador(unsigned int size) : Comportamiento(size){
@@ -31,6 +39,9 @@ class ComportamientoJugador : public Comportamiento{
       con_zapatillas=false,
       con_bikini=false;
       girar_estrella=false;
+
+
+
     }
 
     ComportamientoJugador(const ComportamientoJugador & comport) : Comportamiento(comport){}

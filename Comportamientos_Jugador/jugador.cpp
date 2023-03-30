@@ -42,6 +42,29 @@ Action ComportamientoJugador::think(Sensores sensores){
 	cout << "Vida: " << sensores.vida << endl;
 	cout << endl;
 
+	if(sensores.reset){
+		this->bien_situado=false;
+		this->con_bikini=false;
+		this->con_zapatillas=false;
+		while (!this->Cola_acciones.empty())
+		{
+			this->Cola_acciones.pop();
+		}
+		last_action=actIDLE;
+	}
+	//Cuando haya un sensor.choque que se active 
+	//Se vuelve a meter la ultima accion en la cola de acciones pero al principio
+	if(sensores.colision){
+		int N=this->Cola_acciones.size();
+		this->Cola_acciones.push(last_action);
+		for (int i = 0; i < N; i++)
+		{
+			this->Cola_acciones.push(Cola_acciones.front());
+			this->Cola_acciones.pop();
+		}
+		last_action=actIDLE;
+	}
+
 	int a;
 	// Determinar el efecto de la ultima accion enviada
 	switch (last_action){
@@ -85,10 +108,23 @@ Action ComportamientoJugador::think(Sensores sensores){
 		last_action=actIDLE;
 		return actIDLE;
 	}
+	if(sensores.terreno[0]=='X' and sensores.bateria>=1500){
+		if ((sensores.terreno[2]=='T' or sensores.terreno[2]=='S' or sensores.terreno[2]=='G' or sensores.terreno[2]=='B' or sensores.terreno[2]=='X' or sensores.terreno[2]=='D' or sensores.terreno[2]=='K' )  and  sensores.superficie[2]=='_')
+			Cola_acciones.push(actFORWARD);	
+		else if(sensores.terreno[2]=='A' and con_bikini)
+			Cola_acciones.push(actFORWARD);				
+			else
+				Cola_acciones.push(actTURN_SR);
+
+		if(rand()%2==0)
+			Cola_acciones.push(actTURN_SR);
+		else
+			Cola_acciones.push(actTURN_BR);
+	}
 	//
 	//Metodo siguiente acción 
 	//
-	if (sensores.terreno[0]=='G' and !bien_situado){
+	if ((sensores.terreno[0]=='G' and !bien_situado) or sensores.nivel==0){
 		current_state.fil = sensores.posF;
 		current_state.col= sensores.posC;
 		current_state.brujula = sensores.sentido;
