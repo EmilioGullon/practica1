@@ -42,6 +42,7 @@ Action ComportamientoJugador::think(Sensores sensores){
 	cout << "Vida: " << sensores.vida << endl;
 	cout << endl;
 
+	//SE RESETEA LA POSICIÓN Y VARIABLES CUANDO HAY UN RESET
 	if(sensores.reset){
 		this->bien_situado=false;
 		this->con_bikini=false;
@@ -52,6 +53,7 @@ Action ComportamientoJugador::think(Sensores sensores){
 		}
 		last_action=actIDLE;
 	}
+	
 	//Cuando haya un sensor.choque que se active 
 	//Se vuelve a meter la ultima accion en la cola de acciones pero al principio
 	if(sensores.colision){
@@ -103,11 +105,14 @@ Action ComportamientoJugador::think(Sensores sensores){
 		current_state.brujula = static_cast<Orientacion>(a);
 	break;
 	}
-
+	
+	
+	//ESPERA A QUE SE RECARGUE LA BATERÍA
 	if(sensores.terreno[0]=='X' and sensores.bateria<1500){
 		last_action=actIDLE;
 		return actIDLE;
 	}
+	//MOVIMIENTO ALEATORIO DESPUES DE LA BATERÍA
 	if(sensores.terreno[0]=='X' and sensores.bateria>=1500){
 		if ((sensores.terreno[2]=='T' or sensores.terreno[2]=='S' or sensores.terreno[2]=='G' or sensores.terreno[2]=='B' or sensores.terreno[2]=='X' or sensores.terreno[2]=='D' or sensores.terreno[2]=='K' )  and  sensores.superficie[2]=='_')
 			Cola_acciones.push(actFORWARD);	
@@ -121,22 +126,23 @@ Action ComportamientoJugador::think(Sensores sensores){
 		else
 			Cola_acciones.push(actTURN_BR);
 	}
-	//
-	//Metodo siguiente acción 
-	//
+	
+	
+	//METODOS REVISAN SI SE COJE ALGUN OBJETO
 	if ((sensores.terreno[0]=='G' and !bien_situado) or sensores.nivel==0){
 		current_state.fil = sensores.posF;
 		current_state.col= sensores.posC;
 		current_state.brujula = sensores.sentido;
 		bien_situado = true;
 	}
+	//
 	if(sensores.terreno[0]=='K' and !con_bikini)
 		con_bikini=true;
-	
+	//	
 	if(sensores.terreno[0]=='D' and !con_zapatillas)
 		con_zapatillas=true;
 	
-
+	//PINTAR BORDES
 	if(pintar_bordes){
 			// set top and bottom rows to zero
 		int N = mapaResultado.size();
@@ -158,12 +164,15 @@ Action ComportamientoJugador::think(Sensores sensores){
 			mapaResultado[i][N-3] = 'P'; // set to zero
 			mapaResultado[i][N-2] = 'P'; // set to zero
 			mapaResultado[i][N-1] = 'P'; // set to zero
-   		}
+		}
 		pintar_bordes=false;
 	}	
+
+
 	if (bien_situado){
 		PonerTerrenoEnMatriz(sensores.terreno,current_state,mapaResultado);
 	}
+	//GUIA PRACTICA
 	/*
 	if ((sensores.terreno[2]=='T' or sensores.terreno[2]=='S' or sensores.terreno[2]=='G')  and  sensores.superficie[2]=='_'){
 	accion = actFORWARD;
@@ -175,7 +184,6 @@ Action ComportamientoJugador::think(Sensores sensores){
 	girar_derecha = (rand()%2 == 0);
 	}
 	*/
-	//todo
 	//Terminar cola de acciones 
 
 	bool CasillaEspecial = false;
@@ -185,6 +193,7 @@ Action ComportamientoJugador::think(Sensores sensores){
 	else if(sensores.terreno[2]=='A' and con_bikini)
 		SeguirRecto = true;
 
+	//SI LA COLA ESTA VACIA
 	if(Cola_acciones.empty()){
 		cout<<"Buscando casillas..."<<endl;
 		pair<map<int,CasillaVision>,vector<CasillaVision>> movimientos = BuscarCasillaObjetivo(sensores,current_state,CasillaEspecial);
@@ -218,11 +227,19 @@ Action ComportamientoJugador::think(Sensores sensores){
 	return accion;
 }
 
-int ComportamientoJugador::interact(Action accion, int valor){
-  return false;
+
+/**
+   *  @brief 
+   * 
+   *  @tparam 
+   * 
+   *  @return
+   */
+
+int ComportamientoJugador::interact(Action accion, int valor)
+{
+	return false;
 }
-
-
 
 pair<map<int,CasillaVision>,vector<CasillaVision>> ComportamientoJugador::BuscarCasillaObjetivo(Sensores s, const state &st,bool &CasillaEspecial){
 	map<int,CasillaVision> p;
@@ -490,10 +507,10 @@ queue<Action> CasoIzq(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta){
 		}
 		if (pos<0)
 		{
-			pos=-pos;
+			pos = -pos;
 		}
 
-		pos=3-pos;
+		pos = 3 - pos;
 		
 
 		for (int i = 0; i < pos; i++) //abs devuelve el valor absoluto
@@ -510,7 +527,7 @@ queue<Action> CasoDrch(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta){
 	bool enc=false;
 	queue<Action> devolver;
 	for (int i = 0; i < p.size()&&!enc; i++)
-		if(p[i].pos==p[i].dist&&p[i].dist<=Nvl)
+		if(p[i].pos == p[i].dist && p[i].dist <= Nvl)
 			enc=true;
 	//Si pudo llegar al nvl en una linea recta
 	if(!enc)
@@ -635,7 +652,7 @@ void PonerTerrenoEnMatriz(const vector<unsigned char> &terreno, const state &st,
 	case suroeste: 
 		fil=1;
 		col=-1;
-		 cont=1;
+		cont=1;
 		fil1=0, col1=0;
 		for(int i=1;i<4;i++){
 			fil1=i;
@@ -681,12 +698,6 @@ void PonerTerrenoEnMatriz(const vector<unsigned char> &terreno, const state &st,
 		}		
 	break;
 	}	
-
-	
-	
-	
-
-
 	
 }
 

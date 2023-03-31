@@ -39,17 +39,25 @@ class ComportamientoJugador : public Comportamiento{
       con_zapatillas=false,
       con_bikini=false;
       girar_estrella=false;
-
-
-
     }
 
     ComportamientoJugador(const ComportamientoJugador & comport) : Comportamiento(comport){}
 
     ~ComportamientoJugador(){}
 
+
     Action think(Sensores sensores);
+
+    
     int interact(Action accion, int valor);
+
+    /**
+   *  @brief 
+   * 
+   *  @tparam 
+   * 
+   *  @return
+   */
     pair<map<int,CasillaVision>,vector<CasillaVision>> BuscarCasillaObjetivo(Sensores s, const state &st,bool &CasillaEspecial);
 
   private:
@@ -77,12 +85,58 @@ class ComportamientoJugador : public Comportamiento{
 };
 
 
+/**
+   *  @brief 
+   * 
+   *  @tparam 
+   * 
+   *  @return
+   */
 queue<Action> BuscarMovimientos(pair<map<int,CasillaVision>,vector<CasillaVision>> p);
+
+/**
+   *  @brief 
+   * 
+   *  @tparam 
+   * 
+   *  @return
+   */
 queue<Action> GirarDetras();
+
+/**
+   *  @brief 
+   * 
+   *  @tparam 
+   * 
+   *  @return
+   */
 queue<Action> CasoCentro(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta);
+
+/**
+   *  @brief 
+   * 
+   *  @tparam 
+   * 
+   *  @return
+   */
 queue<Action> CasoIzq(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta);
+
+/**
+   *  @brief 
+   * 
+   *  @tparam 
+   * 
+   *  @return
+   */
 queue<Action> CasoDrch(int pos,int Nvl,vector<CasillaVision> p,bool darVuelta);
 
+/**
+   *  @brief 
+   * 
+   *  @tparam 
+   * 
+   *  @return
+   */
 void PonerTerrenoEnMatriz(const vector<unsigned char> &terreno, const state &st, vector< vector<unsigned char> > &matriz);
 
 
