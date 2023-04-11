@@ -42,6 +42,33 @@ Action ComportamientoJugador::think(Sensores sensores){
 	cout << "Vida: " << sensores.vida << endl;
 	cout << endl;
 
+	bool rebotar = false;
+	//IF SE VA A PEGA UNA OSTIA VACIAMOS LA COLA
+	if(this->Cola_acciones.front() == actFORWARD && (sensores.terreno[2] == 'P' or sensores.terreno[2] == 'M' )){
+		cout<<sensores.terreno[2]<<endl;
+		rebotar = true;
+	}
+	//IF SE LA PUEDE PEGAR CON UN LOBO GIRAMOS PA TRA
+	if(!rebotar){
+		for (int i = 1; i < 4; i++)
+		{
+			if(sensores.superficie[i] == 'l'&&!rebotar){
+				rebotar = true;
+			}
+		}
+	}
+
+	if(rebotar){
+		while(!this->Cola_acciones.empty())
+			this->Cola_acciones.pop();
+		if(rand()%2)
+			this->Cola_acciones.push(actTURN_BL);
+		else
+			this->Cola_acciones.push(actTURN_BR);
+		
+		this->Cola_acciones.push(actFORWARD);
+	}
+
 	//SE RESETEA LA POSICIÓN Y VARIABLES CUANDO HAY UN RESET
 	if(sensores.reset){
 		this->bien_situado=false;
@@ -190,7 +217,7 @@ Action ComportamientoJugador::think(Sensores sensores){
 	bool SeguirRecto = false;
 	if((sensores.terreno[2]=='T' or sensores.terreno[2]=='S' or sensores.terreno[2]=='G' or sensores.terreno[2]=='B' or sensores.terreno[2]=='X' or sensores.terreno[2]=='D' or sensores.terreno[2]=='K' )  and  sensores.superficie[2]=='_')
 		SeguirRecto = true;
-	else if(sensores.terreno[2]=='A' and con_bikini)
+	else if(sensores.terreno[2]=='A' and (con_bikini or sensores.terreno[0] == 'A'))
 		SeguirRecto = true;
 
 	//SI LA COLA ESTA VACIA
@@ -213,8 +240,10 @@ Action ComportamientoJugador::think(Sensores sensores){
 					Cola_acciones.push(actFORWARD);
 				}
 
-			else
-				Cola_acciones.push(actTURN_BR);			
+			else{
+				Cola_acciones.push(actTURN_BR);	
+				Cola_acciones.push(actFORWARD);				
+				}		
 		}
 	}
 	//Si se ha terminado hacer una nueva	
