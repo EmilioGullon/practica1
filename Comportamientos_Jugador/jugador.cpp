@@ -135,12 +135,12 @@ Action ComportamientoJugador::think(Sensores sensores){
 	
 	
 	//ESPERA A QUE SE RECARGUE LA BATERÍA
-	if(sensores.terreno[0]=='X' and sensores.bateria<1500){
+	if(sensores.terreno[0]=='X' and sensores.bateria<2000){
 		last_action=actIDLE;
 		return actIDLE;
 	}
 	//MOVIMIENTO ALEATORIO DESPUES DE LA BATERÍA
-	if(sensores.terreno[0]=='X' and sensores.bateria>=1500){
+	if(sensores.terreno[0]=='X' and sensores.bateria>=2500){
 		if ((sensores.terreno[2]=='T' or sensores.terreno[2]=='S' or sensores.terreno[2]=='G' or sensores.terreno[2]=='B' or sensores.terreno[2]=='X' or sensores.terreno[2]=='D' or sensores.terreno[2]=='K' )  and  sensores.superficie[2]=='_')
 			Cola_acciones.push(actFORWARD);	
 		else if(sensores.terreno[2]=='A' and con_bikini)
@@ -292,7 +292,7 @@ pair<map<int,CasillaVision>,vector<CasillaVision>> ComportamientoJugador::Buscar
 			break;
 		// RECARGA X
 		case 'X':
-			if(s.bateria<1150){
+			if(s.bateria<1500){
 				p[2]=c;
 				CasillaEspecial=true;				
 			}
